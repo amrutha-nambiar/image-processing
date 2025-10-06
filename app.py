@@ -1,22 +1,12 @@
 import streamlit as st
-import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 import io
-import time
 
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="📸 Web Camera Filters", layout="centered")
 
 st.title("📸 Camera Filters with Sliders")
-
-# --- Session state setup ---
-if "snapshot" not in st.session_state:
-    st.session_state.snapshot = None
-if "camera_running" not in st.session_state:
-    st.session_state.camera_running = False
-if "take_snapshot" not in st.session_state:
-    st.session_state.take_snapshot = False
 
 # --- Sidebar controls ---
 st.sidebar.header("🎨 Filters & Adjustments")
@@ -30,86 +20,57 @@ contrast = st.sidebar.slider("Contrast", 0, 200, 100)
 
 # --- Helper function for filters ---
 def apply_filter(frame, filter_name, brightness=100, contrast=100):
-    frame = cv2.convertScaleAbs(frame, alpha=contrast / 100, beta=brightness - 100)
+    # Convert PIL to NumPy
+    frame = np.array(frame)
+
+    # Brightness and contrast adjustment
+    pil_img = Image.fromarray(frame)
+    enhancer_brightness = ImageEnhance.Brightness(pil_img)
+    pil_img = enhancer_brightness.enhance(brightness / 100)
+    enhancer_contrast = ImageEnhance.Contrast(pil_img)
+    pil_img = enhancer_contrast.enhance(contrast / 100)
+    frame = np.array(pil_img)
+
     if filter_name == "grayscale":
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+        frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+        frame = np.stack([frame] * 3, axis=-1)
     elif filter_name == "sepia":
         kernel = np.array([[0.272, 0.534, 0.131],
                            [0.349, 0.686, 0.168],
                            [0.393, 0.769, 0.189]])
-        frame = cv2.transform(frame, kernel)
-        frame = np.clip(frame, 0, 255)
+        frame = frame.dot(kernel.T)
+        frame = np.clip(frame, 0, 255).astype(np.uint8)
     elif filter_name == "invert":
-        frame = cv2.bitwise_not(frame)
+        frame = 255 - frame
     elif filter_name == "blur":
-        frame = cv2.GaussianBlur(frame, (15, 15), 0)
-    return frame
+        frame = np.array(Image.fromarray(frame).filter(Image.Filter.BLUR))
 
-# --- Layout ---
-frame_placeholder = st.empty()
-snapshot_placeholder = st.empty()
+    return Image.fromarray(frame)
 
-col1, col2, col3, col4 = st.columns(4)
-start = col1.button("▶ Start Camera")
-stop = col2.button("⏹ Stop Camera")
-capture = col3.button("📸 Take Snapshot")
-download = col4.button("💾 Download Snapshot")
+# --- Camera Input ---
+img_file_buffer = st.camera_input("📷 Take a photo")
 
-# --- Button handling logic ---
-if start:
-    st.session_state.camera_running = True
-if stop:
-    st.session_state.camera_running = False
-if capture:
-    st.session_state.take_snapshot = True
+if img_file_buffer is not None:
+    # Convert captured image to PIL
+    image = Image.open(img_file_buffer)
+    st.image(image, caption="Original Image", use_container_width=True)
 
-# --- Camera loop ---
-if st.session_state.camera_running:
-    cap = cv2.VideoCapture(0)
+    # Apply filter
+    filtered_image = apply_filter(image, filter_name, brightness, contrast)
 
-    if not cap.isOpened():
-        st.error("🚫 Unable to access webcam. Check permissions or device availability.")
-        st.session_state.camera_running = False
-    else:
-        st.info("📷 Camera is active. Press '⏹ Stop Camera' to end.")
+    st.image(filtered_image, caption=f"Filtered: {filter_name}", use_container_width=True)
 
-        # Keep showing frames until stopped
-        while st.session_state.camera_running:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("⚠️ Cannot read from webcam.")
-                break
+    # --- Download filtered snapshot ---
+    buf = io.BytesIO()
+    filtered_image.save(buf, format="PNG")
+    byte_im = buf.getvalue()
 
-            frame = cv2.flip(frame, 1)
-            frame = apply_filter(frame, filter_name, brightness, contrast)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    st.download_button(
+        label="💾 Download Filtered Image",
+        data=byte_im,
+        file_name="filtered_snapshot.png",
+        mime="image/png"
+    )
 
-            frame_placeholder.image(frame_rgb, channels="RGB")
-
-            # Handle snapshot capture
-            if st.session_state.take_snapshot:
-                st.session_state.snapshot = frame_rgb.copy()
-                st.session_state.take_snapshot = False
-                st.success("📸 Snapshot captured!")
-                snapshot_placeholder.image(st.session_state.snapshot, caption="Snapshot")
-                break  # Exit loop to show static snapshot
-
-            time.sleep(0.05)
-
-        cap.release()
-
-# --- Download snapshot section ---
-if st.session_state.snapshot is not None:
-    if download:
-        img = Image.fromarray(st.session_state.snapshot)
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        byte_im = buf.getvalue()
-
-        st.download_button(
-            label="⬇ Download Your Snapshot",
-            data=byte_im,
-            file_name="snapshot.png",
-            mime="image/png"
-        )
+else:
+    st.info("📸 Use the camera above to take a photo and apply filters.")
