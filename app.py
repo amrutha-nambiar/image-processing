@@ -6,43 +6,103 @@ import io
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Filterly", layout="centered")
 
-# --- Gold & White Theme CSS ---
+# --- Dark Brown & Gold Theme CSS ---
 st.markdown("""
     <style>
-        [data-testid="stAppViewContainer"] {background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1); color: black;}
-        [data-testid="stSidebar"] {background-color: #FFECB3 !important; color: black !important;}
-        h1, h2, h3, h4 {color: #C89B00 !important; font-weight: 700;}
-        div.stButton > button {background: linear-gradient(to right, #FFD54F, #FFC107); color: black; border-radius: 10px; border: 1px solid #C89B00; font-weight: 600;}
-        div.stButton > button:hover {background: linear-gradient(to right, #FFC107, #FFB300);}
+        /* App background and main text */
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1);
+            color: #4E342E;  /* Dark brown text */
+        }
+
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background-color: #FFECB3 !important;
+            color: #4E342E !important;
+        }
+
+        /* Sidebar text */
+        [data-testid="stSidebar"] h2, 
+        [data-testid="stSidebar"] label, 
+        [data-testid="stSidebar"] div {
+            color: #4E342E !important;
+        }
+
+        /* Titles */
+        h1, h2, h3, h4 {
+            color: #C89B00 !important; /* Gold headings */
+            font-weight: 700;
+        }
+
+        /* Buttons */
+        div.stButton > button {
+            background: linear-gradient(to right, #FFD54F, #FFC107);
+            color: #4E342E;
+            border-radius: 10px;
+            border: 1px solid #C89B00;
+            font-weight: 600;
+        }
+
+        div.stButton > button:hover {
+            background: linear-gradient(to right, #FFC107, #FFB300);
+            color: #4E342E;
+            border: 1px solid #B58900;
+        }
+
+        /* Tabs */
+        button[data-baseweb="tab"] {
+            background-color: #FFECB3;
+            color: #4E342E;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        button[data-baseweb="tab"]:hover {
+            background-color: #FFD54F;
+            color: #4E342E;
+        }
+
+        button[data-baseweb="tab"][aria-selected="true"] {
+            background-color: #FFC107;
+            color: #4E342E;
+            border-bottom: 3px solid #C89B00;
+        }
+
+        /* Info boxes */
+        [data-testid="stInfo"] {
+            background-color: #FFF8E1;
+            color: #4E342E;
+            border-left: 5px solid #FFD54F;
+        }
     </style>
 """, unsafe_allow_html=True)
 
+# --- Title ---
 st.title("Filterly")
 
-# --- Sidebar controls ---
+# --- Sidebar Filters & Adjustments ---
 st.sidebar.header("Filters & Adjustments")
 filter_name = st.sidebar.selectbox(
     "Choose a filter:",
     ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
 )
-
 brightness = st.sidebar.slider("Brightness", 0, 200, 100)
 contrast = st.sidebar.slider("Contrast", 0, 200, 100)
 intensity = st.sidebar.slider("Filter Intensity (for blur/sharpen)", 1, 10, 2)
 
-# --- Image transformation controls ---
+# --- Sidebar Transformations ---
 st.sidebar.header("Transformations")
 rotate_angle = st.sidebar.slider("Rotate (degrees)", 0, 360, 0)
 flip_horizontal = st.sidebar.checkbox("Flip Horizontally")
 flip_vertical = st.sidebar.checkbox("Flip Vertically")
 
 st.sidebar.subheader("Crop Image")
-crop_x = st.sidebar.slider("Crop X (left to right %)", 0, 100, 0)
-crop_y = st.sidebar.slider("Crop Y (top to bottom %)", 0, 100, 0)
+crop_x = st.sidebar.slider("Crop X (left %)", 0, 100, 0)
+crop_y = st.sidebar.slider("Crop Y (top %)", 0, 100, 0)
 crop_width = st.sidebar.slider("Crop Width (%)", 10, 100, 100)
 crop_height = st.sidebar.slider("Crop Height (%)", 10, 100, 100)
 
-# --- Helper function for filters and transformations ---
+# --- Helper function ---
 def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2,
                  rotate_angle=0, flip_h=False, flip_v=False,
                  crop_x=0, crop_y=0, crop_width=100, crop_height=100):
@@ -80,7 +140,7 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2,
     elif filter_name == "contour":
         pil_img = pil_img.filter(ImageFilter.CONTOUR)
 
-    # --- Transformations ---
+    # Transformations
     if rotate_angle != 0:
         pil_img = pil_img.rotate(rotate_angle, expand=True)
     if flip_h:
@@ -88,7 +148,7 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2,
     if flip_v:
         pil_img = pil_img.transpose(Image.FLIP_TOP_BOTTOM)
 
-    # --- Crop ---
+    # Crop
     width, height = pil_img.size
     left = int(width * crop_x / 100)
     top = int(height * crop_y / 100)
@@ -122,17 +182,18 @@ if image is not None:
             crop_x, crop_y, crop_width, crop_height
         )
 
+    # Columns for Original vs Filtered
     col1, col2 = st.columns(2)
     with col1:
         st.image(image, caption="Original Image", use_container_width=True)
     with col2:
         st.image(filtered_image, caption=f"Filtered & Transformed: {filter_name}", use_container_width=True)
 
-    # --- Before/After Slider ---
+    # Before/After comparison
     st.subheader("🔄 Compare Before / After")
     st.image([image, filtered_image], caption=["Original", "Filtered"], width=300)
 
-    # --- Download ---
+    # Download button
     buf = io.BytesIO()
     filtered_image.save(buf, format="PNG")
     byte_im = buf.getvalue()
