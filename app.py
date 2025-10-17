@@ -9,32 +9,23 @@ st.set_page_config(page_title="Filterly", layout="centered")
 # --- Dark Brown & Gold Theme CSS ---
 st.markdown("""
     <style>
-        /* App background and main text */
         [data-testid="stAppViewContainer"] {
             background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1);
-            color: #4E342E;  /* Dark brown text */
+            color: #4E342E;
         }
-
-        /* Sidebar styling */
         [data-testid="stSidebar"] {
             background-color: #FFECB3 !important;
             color: #4E342E !important;
         }
-
-        /* Sidebar text */
         [data-testid="stSidebar"] h2, 
         [data-testid="stSidebar"] label, 
         [data-testid="stSidebar"] div {
             color: #4E342E !important;
         }
-
-        /* Titles */
         h1, h2, h3, h4 {
-            color: #C89B00 !important; /* Gold headings */
+            color: #C89B00 !important;
             font-weight: 700;
         }
-
-        /* Buttons */
         div.stButton > button {
             background: linear-gradient(to right, #FFD54F, #FFC107);
             color: #4E342E;
@@ -42,33 +33,26 @@ st.markdown("""
             border: 1px solid #C89B00;
             font-weight: 600;
         }
-
         div.stButton > button:hover {
             background: linear-gradient(to right, #FFC107, #FFB300);
             color: #4E342E;
             border: 1px solid #B58900;
         }
-
-        /* Tabs */
         button[data-baseweb="tab"] {
             background-color: #FFECB3;
             color: #4E342E;
             border-radius: 10px;
             font-weight: 600;
         }
-
         button[data-baseweb="tab"]:hover {
             background-color: #FFD54F;
             color: #4E342E;
         }
-
         button[data-baseweb="tab"][aria-selected="true"] {
             background-color: #FFC107;
             color: #4E342E;
             border-bottom: 3px solid #C89B00;
         }
-
-        /* Info boxes */
         [data-testid="stInfo"] {
             background-color: #FFF8E1;
             color: #4E342E;
@@ -182,18 +166,23 @@ if image is not None:
             crop_x, crop_y, crop_width, crop_height
         )
 
-    # Columns for Original vs Filtered
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(image, caption="Original Image", use_container_width=True)
-    with col2:
-        st.image(filtered_image, caption=f"Filtered & Transformed: {filter_name}", use_container_width=True)
+    # --- Show only filtered image initially ---
+    st.subheader("Filtered Image")
+    st.image(filtered_image, use_container_width=True)
 
-    # Before/After comparison
-    st.subheader("🔄 Compare Before / After")
-    st.image([image, filtered_image], caption=["Original", "Filtered"], width=300)
+    # --- Before/After comparison with slider ---
+    st.subheader("🔄 Compare Original vs Filtered")
+    
+    # Convert to numpy for blending
+    orig_np = np.array(image).astype(np.float32)
+    filt_np = np.array(filtered_image).astype(np.float32)
 
-    # Download button
+    # Slider for blending
+    alpha = st.slider("Reveal Original vs Filtered", 0.0, 1.0, 0.0, 0.01)  # 0 = filtered, 1 = original
+    blended = (alpha * orig_np + (1 - alpha) * filt_np).astype(np.uint8)
+    st.image(blended, use_container_width=True)
+
+    # --- Download button ---
     buf = io.BytesIO()
     filtered_image.save(buf, format="PNG")
     byte_im = buf.getvalue()
