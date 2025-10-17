@@ -3,137 +3,83 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 import io
 
-st.set_page_config(page_title="Filterly", layout="wide")
+# --- Streamlit Page Config ---
+st.set_page_config(page_title="📸 Web Camera & Image Filters", layout="centered")
 
-# --- Modern minimal style ---
+# --- Custom Yellow Theme CSS ---
 st.markdown("""
     <style>
+        /* Background color */
         [data-testid="stAppViewContainer"] {
-            background: linear-gradient(135deg, #fff8e1, #fff3c0);
-            color: #111;
-            font-family: 'Poppins', sans-serif;
+            background-color: #FFF8DC; /* Light yellow (cornsilk) */
         }
-
-        header, footer, [data-testid="stToolbar"] {visibility: hidden;}
-
-        /* Title bar */
-        .topbar {
-            width: 100%;
-            text-align: center;
-            padding: 1rem 0;
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #fbc02d;
-            letter-spacing: 2px;
+        [data-testid="stSidebar"] {
+            background-color: #FFECB3; /* Soft pastel yellow for sidebar */
         }
-
-        /* Two column layout */
-        .main-layout {
-            display: flex;
-            justify-content: space-evenly;
-            align-items: flex-start;
-            margin-top: 2rem;
+        /* Titles and headers */
+        h1, h2, h3, h4 {
+            color: #C58900; /* Golden brown */
         }
-
-        /* Image area */
-        .image-panel {
-            flex: 1;
-            text-align: center;
-            padding: 1rem;
+        /* Sidebar text */
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
+            color: #7B5900;
         }
-
-        /* Filter buttons */
-        .filters-panel {
-            flex: 0.3;
-            background: rgba(255,255,255,0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 1.5rem;
-            margin-right: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        .filters-panel button {
-            background: none;
-            border: 2px solid #fbc02d;
-            color: #111;
+        /* Buttons and widgets */
+        div.stButton > button {
+            background-color: #FFD54F;
+            color: black;
             border-radius: 10px;
-            padding: 0.5rem 1rem;
-            margin: 0.3rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 600;
+            border: 1px solid #C58900;
         }
-
-        .filters-panel button:hover {
-            background: #fbc02d;
-            color: #fff;
+        div.stButton > button:hover {
+            background-color: #FFB300;
+            color: white;
         }
-
-        /* Sliders container */
-        .bottom-panel {
-            position: fixed;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        /* Tabs */
+        button[data-baseweb="tab"] {
+            background-color: #FFE082;
+            color: black;
+            border-radius: 10px;
         }
-
-        .download-btn > button {
-            background-color: #fbc02d !important;
-            color: black !important;
-            font-weight: 600;
-            border-radius: 12px;
-            padding: 0.5rem 1.2rem;
-            border: none;
+        button[data-baseweb="tab"]:hover {
+            background-color: #FFD54F;
+            color: black;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            background-color: #FFCA28;
+            color: black;
+            border-bottom: 3px solid #C58900;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Title Bar ---
-st.markdown("<div class='topbar'>📸 Filterly</div>", unsafe_allow_html=True)
+# --- Title ---
+st.title("📸 Camera & Image Filters with Sliders")
 
-# --- Tabs for Input ---
-tab1, tab2 = st.tabs(["📷 Camera", "📁 Upload"])
+# --- Sidebar controls ---
+st.sidebar.header("🎨 Filters & Adjustments")
+filter_name = st.sidebar.selectbox(
+    "Choose a filter:",
+    ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
+)
 
-image = None
-with tab1:
-    img_file_buffer = st.camera_input("")
-    if img_file_buffer is not None:
-        image = Image.open(img_file_buffer)
+brightness = st.sidebar.slider("Brightness", 0, 200, 100)
+contrast = st.sidebar.slider("Contrast", 0, 200, 100)
+intensity = st.sidebar.slider("Filter Intensity (for blur/sharpen)", 1, 10, 2)
 
-with tab2:
-    uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-
-# --- Filters List ---
-filter_list = ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
-cols = st.columns(len(filter_list))
-
-# --- Save selected filter ---
-if "filter" not in st.session_state:
-    st.session_state["filter"] = "none"
-
-for i, f in enumerate(filter_list):
-    if cols[i].button(f.capitalize()):
-        st.session_state["filter"] = f
-
-selected_filter = st.session_state["filter"]
-
-# --- Filter Logic ---
+# --- Helper function for filters ---
 def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     frame = np.array(frame)
+
+    # Brightness & contrast
     pil_img = Image.fromarray(frame)
-    pil_img = ImageEnhance.Brightness(pil_img).enhance(brightness / 100)
-    pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast / 100)
+    enhancer_brightness = ImageEnhance.Brightness(pil_img)
+    pil_img = enhancer_brightness.enhance(brightness / 100)
+    enhancer_contrast = ImageEnhance.Contrast(pil_img)
+    pil_img = enhancer_contrast.enhance(contrast / 100)
     frame = np.array(pil_img)
 
+    # Filters
     if filter_name == "grayscale":
         frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
         frame = np.stack([frame] * 3, axis=-1)
@@ -141,7 +87,8 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
         kernel = np.array([[0.272, 0.534, 0.131],
                            [0.349, 0.686, 0.168],
                            [0.393, 0.769, 0.189]])
-        frame = np.clip(frame.dot(kernel.T), 0, 255).astype(np.uint8)
+        frame = frame.dot(kernel.T)
+        frame = np.clip(frame, 0, 255).astype(np.uint8)
     elif filter_name == "invert":
         frame = 255 - frame
     elif filter_name == "blur":
@@ -155,23 +102,47 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
         frame = np.array(Image.fromarray(frame).filter(ImageFilter.EMBOSS))
     elif filter_name == "contour":
         frame = np.array(Image.fromarray(frame).filter(ImageFilter.CONTOUR))
+
     return Image.fromarray(frame)
 
-# --- Image Display ---
+# --- Image input options ---
+st.subheader("📷 Capture or Upload an Image")
+
+tab1, tab2 = st.tabs(["📸 Use Camera", "📂 Upload Image"])
+
+image = None
+
+with tab1:
+    img_file_buffer = st.camera_input("Take a photo")
+    if img_file_buffer is not None:
+        image = Image.open(img_file_buffer)
+
+with tab2:
+    uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+
+# --- Process image if available ---
 if image is not None:
-    brightness = st.slider("Brightness", 0, 200, 100, key="bright")
-    contrast = st.slider("Contrast", 0, 200, 100, key="cont")
-    intensity = st.slider("Intensity", 1, 10, 2, key="intens")
+    col1, col2 = st.columns(2)
 
-    filtered_image = apply_filter(image, selected_filter, brightness, contrast, intensity)
-    st.image(filtered_image, use_container_width=True)
+    with col1:
+        st.image(image, caption="Original Image", use_container_width=True)
 
+    with col2:
+        filtered_image = apply_filter(image, filter_name, brightness, contrast, intensity)
+        st.image(filtered_image, caption=f"Filtered: {filter_name}", use_container_width=True)
+
+    # --- Download filtered image ---
     buf = io.BytesIO()
     filtered_image.save(buf, format="PNG")
     byte_im = buf.getvalue()
 
-    st.markdown('<div class="download-btn">', unsafe_allow_html=True)
-    st.download_button("💾 Save", byte_im, "filtered_snap.png", "image/png")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.download_button(
+        label="💾 Download Filtered Image",
+        data=byte_im,
+        file_name="filtered_snapshot.png",
+        mime="image/png"
+    )
 else:
-    st.info("📸 Take or upload a photo to apply filters.")
+    st.info("📸 Take a photo or upload an image to apply filters.")
