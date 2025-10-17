@@ -173,8 +173,9 @@ if image is not None:
     # --- Before/After comparison with slider ---
     st.subheader("🔄 Compare Original vs Filtered")
     
-    # Convert to numpy for blending
-    orig_np = np.array(image).astype(np.float32)
+    # Resize original to match filtered image
+    orig_resized = image.resize(filtered_image.size)
+    orig_np = np.array(orig_resized).astype(np.float32)
     filt_np = np.array(filtered_image).astype(np.float32)
 
     # Slider for blending
