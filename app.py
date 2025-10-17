@@ -4,125 +4,131 @@ from PIL import Image, ImageEnhance, ImageFilter
 import io
 
 # --- Streamlit Page Config ---
-st.set_page_config(page_title="Filterly", layout="centered")
+st.set_page_config(page_title="Filterly", layout="wide")
 
-# --- Modern Gold & White Theme CSS ---
+# --- Snapchat-inspired Style ---
 st.markdown("""
     <style>
-        /* App background */
+        /* Fullscreen clean background */
         [data-testid="stAppViewContainer"] {
-            background: linear-gradient(to bottom right, #ffffff, #f9f6f2);
-            color: #1c1c1c;
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: black;
+            color: white;
         }
 
-        /* Sidebar styling */
-        [data-testid="stSidebar"] {
-            background-color: #f5f3ef !important;
-            border-right: 1px solid #e0d9c8;
+        /* Hide Streamlit's default header & footer */
+        header, footer, [data-testid="stToolbar"] {visibility: hidden !important;}
+
+        /* Center main content */
+        [data-testid="stVerticalBlock"] {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
-        /* Sidebar text */
-        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
-            color: #1c1c1c !important;
+        /* App title */
+        h1 {
+            color: #FFFC00 !important;
+            font-size: 2.8em !important;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        /* Floating control box (filters & sliders) */
+        .control-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 252, 0, 0.15);
+            border: 2px solid rgba(255, 252, 0, 0.6);
+            border-radius: 20px;
+            padding: 15px 25px;
+            backdrop-filter: blur(12px);
+            color: white;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        /* Labels */
+        label, .stSelectbox label, .stSlider label {
+            color: white !important;
             font-weight: 500;
         }
 
-        /* Titles */
-        h1, h2, h3, h4 {
-            color: #b8860b !important; /* muted gold */
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        /* Buttons */
+        /* Buttons (Snapchat-style) */
         div.stButton > button {
-            background: #f5de9e;
-            color: #1c1c1c;
-            border-radius: 8px;
+            background-color: #FFFC00 !important;
+            color: black !important;
             border: none;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.2s ease-in-out;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 1.5em;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(255, 252, 0, 0.7);
         }
 
         div.stButton > button:hover {
-            background: #e8c97a;
-            color: #000;
-            box-shadow: 0px 3px 6px rgba(0,0,0,0.15);
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 252, 0, 1);
         }
 
-        /* Tabs */
-        button[data-baseweb="tab"] {
-            background-color: #faf9f7;
-            color: #1c1c1c;
-            border-radius: 6px;
-            border: 1px solid #e0d9c8;
-            font-weight: 500;
-            padding: 0.4rem 0.8rem;
+        /* Download button */
+        .download-btn > button {
+            background-color: #FFFC00 !important;
+            color: black !important;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.5rem 1.2rem;
+            border: none;
         }
 
-        button[data-baseweb="tab"]:hover {
-            background-color: #f5de9e;
-            color: #000;
-        }
-
-        button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #e8c97a;
-            color: #000;
-            border-bottom: 2px solid #b8860b;
-        }
-
-        /* Info boxes */
-        [data-testid="stInfo"] {
-            background-color: #f9f6f2;
-            color: #1c1c1c;
-            border-left: 4px solid #b8860b;
-        }
-
-        /* Image styling */
-        [data-testid="stImageContainer"] img {
-            border-radius: 10px;
-            box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
-        }
-
-        /* Sliders */
-        .stSlider > div > div > div > div {
-            background: #b8860b;
+        .download-btn > button:hover {
+            background-color: #FFF56A !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # --- Title ---
-st.title("✨ Filterly")
+st.markdown("<h1>📸 Filterly</h1>", unsafe_allow_html=True)
 
-st.caption("A clean and elegant image filter app")
+# --- Tabs for Input ---
+tab1, tab2 = st.tabs(["📷 Camera", "📁 Upload"])
 
-# --- Sidebar controls ---
-st.sidebar.header("🎛️ Filters & Adjustments")
-filter_name = st.sidebar.selectbox(
-    "Choose a filter:",
+image = None
+
+with tab1:
+    img_file_buffer = st.camera_input("")
+    if img_file_buffer is not None:
+        image = Image.open(img_file_buffer)
+
+with tab2:
+    uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+
+# --- Filter Controls (Floating Box) ---
+st.markdown('<div class="control-panel">', unsafe_allow_html=True)
+filter_name = st.selectbox(
+    "Filter",
     ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
 )
+brightness = st.slider("Brightness", 0, 200, 100)
+contrast = st.slider("Contrast", 0, 200, 100)
+intensity = st.slider("Intensity", 1, 10, 2)
+st.markdown('</div>', unsafe_allow_html=True)
 
-brightness = st.sidebar.slider("Brightness", 0, 200, 100)
-contrast = st.sidebar.slider("Contrast", 0, 200, 100)
-intensity = st.sidebar.slider("Filter Intensity (for blur/sharpen)", 1, 10, 2)
-
-# --- Helper function for filters ---
+# --- Filter Logic ---
 def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     frame = np.array(frame)
+    pil_img = Image.fromarray(frame)
 
     # Brightness & contrast
-    pil_img = Image.fromarray(frame)
-    enhancer_brightness = ImageEnhance.Brightness(pil_img)
-    pil_img = enhancer_brightness.enhance(brightness / 100)
-    enhancer_contrast = ImageEnhance.Contrast(pil_img)
-    pil_img = enhancer_contrast.enhance(contrast / 100)
+    pil_img = ImageEnhance.Brightness(pil_img).enhance(brightness / 100)
+    pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast / 100)
     frame = np.array(pil_img)
 
-    # Filters
+    # Apply filters
     if filter_name == "grayscale":
         frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
         frame = np.stack([frame] * 3, axis=-1)
@@ -130,8 +136,7 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
         kernel = np.array([[0.272, 0.534, 0.131],
                            [0.349, 0.686, 0.168],
                            [0.393, 0.769, 0.189]])
-        frame = frame.dot(kernel.T)
-        frame = np.clip(frame, 0, 255).astype(np.uint8)
+        frame = np.clip(frame.dot(kernel.T), 0, 255).astype(np.uint8)
     elif filter_name == "invert":
         frame = 255 - frame
     elif filter_name == "blur":
@@ -148,44 +153,22 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
 
     return Image.fromarray(frame)
 
-# --- Image input options ---
-st.subheader("📷 Capture or Upload an Image")
-
-tab1, tab2 = st.tabs(["Use Camera", "Upload Image"])
-
-image = None
-
-with tab1:
-    img_file_buffer = st.camera_input("Take a photo")
-    if img_file_buffer is not None:
-        image = Image.open(img_file_buffer)
-
-with tab2:
-    uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-
-# --- Process image if available ---
+# --- Display ---
 if image is not None:
-    col1, col2 = st.columns(2)
+    filtered_image = apply_filter(image, filter_name, brightness, contrast, intensity)
+    st.image(filtered_image, use_container_width=True)
 
-    with col1:
-        st.image(image, caption="Original", use_container_width=True)
-
-    with col2:
-        filtered_image = apply_filter(image, filter_name, brightness, contrast, intensity)
-        st.image(filtered_image, caption=f"Filtered: {filter_name}", use_container_width=True)
-
-    # --- Download filtered image ---
     buf = io.BytesIO()
     filtered_image.save(buf, format="PNG")
     byte_im = buf.getvalue()
 
+    st.markdown('<div class="download-btn">', unsafe_allow_html=True)
     st.download_button(
-        label="💾 Download Filtered Image",
+        label="💾 Save",
         data=byte_im,
-        file_name="filtered_snapshot.png",
+        file_name="filtered_snap.png",
         mime="image/png"
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 else:
-    st.info("Take a photo or upload an image to apply filters.")
+    st.info("📸 Take or upload a photo to apply filters.")
