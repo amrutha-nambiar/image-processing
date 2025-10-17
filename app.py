@@ -9,73 +9,14 @@ st.set_page_config(page_title="Filterly", layout="centered")
 # --- Gold & White Theme CSS ---
 st.markdown("""
     <style>
-        /* App background */
-        [data-testid="stAppViewContainer"] {
-            background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1);
-            color: black;
-        }
-
-        /* Sidebar styling */
-        [data-testid="stSidebar"] {
-            background-color: #FFECB3 !important; /* soft yellow */
-            color: black !important;
-        }
-
-        /* Sidebar text */
-        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
-            color: black !important;
-        }
-
-        /* Titles */
-        h1, h2, h3, h4 {
-            color: #C89B00 !important; /* elegant gold */
-            font-weight: 700;
-        }
-
-        /* Buttons */
-        div.stButton > button {
-            background: linear-gradient(to right, #FFD54F, #FFC107);
-            color: black;
-            border-radius: 10px;
-            border: 1px solid #C89B00;
-            font-weight: 600;
-        }
-
-        div.stButton > button:hover {
-            background: linear-gradient(to right, #FFC107, #FFB300);
-            color: black;
-            border: 1px solid #B58900;
-        }
-
-        /* Tabs */
-        button[data-baseweb="tab"] {
-            background-color: #FFECB3;
-            color: black;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        button[data-baseweb="tab"]:hover {
-            background-color: #FFD54F;
-            color: black;
-        }
-
-        button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #FFC107;
-            color: black;
-            border-bottom: 3px solid #C89B00;
-        }
-
-        /* Info boxes */
-        [data-testid="stInfo"] {
-            background-color: #FFF8E1;
-            color: black;
-            border-left: 5px solid #FFD54F;
-        }
+        [data-testid="stAppViewContainer"] {background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1); color: black;}
+        [data-testid="stSidebar"] {background-color: #FFECB3 !important; color: black !important;}
+        h1, h2, h3, h4 {color: #C89B00 !important; font-weight: 700;}
+        div.stButton > button {background: linear-gradient(to right, #FFD54F, #FFC107); color: black; border-radius: 10px; border: 1px solid #C89B00; font-weight: 600;}
+        div.stButton > button:hover {background: linear-gradient(to right, #FFC107, #FFB300);}
     </style>
 """, unsafe_allow_html=True)
 
-# --- Title ---
 st.title("Filterly")
 
 # --- Sidebar controls ---
@@ -89,49 +30,77 @@ brightness = st.sidebar.slider("Brightness", 0, 200, 100)
 contrast = st.sidebar.slider("Contrast", 0, 200, 100)
 intensity = st.sidebar.slider("Filter Intensity (for blur/sharpen)", 1, 10, 2)
 
-# --- Helper function for filters ---
-def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
-    frame = np.array(frame)
+# --- Image transformation controls ---
+st.sidebar.header("Transformations")
+rotate_angle = st.sidebar.slider("Rotate (degrees)", 0, 360, 0)
+flip_horizontal = st.sidebar.checkbox("Flip Horizontally")
+flip_vertical = st.sidebar.checkbox("Flip Vertically")
 
+st.sidebar.subheader("Crop Image")
+crop_x = st.sidebar.slider("Crop X (left to right %)", 0, 100, 0)
+crop_y = st.sidebar.slider("Crop Y (top to bottom %)", 0, 100, 0)
+crop_width = st.sidebar.slider("Crop Width (%)", 10, 100, 100)
+crop_height = st.sidebar.slider("Crop Height (%)", 10, 100, 100)
+
+# --- Helper function for filters and transformations ---
+def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2,
+                 rotate_angle=0, flip_h=False, flip_v=False,
+                 crop_x=0, crop_y=0, crop_width=100, crop_height=100):
+
+    frame = np.array(frame)
+    
     # Brightness & contrast
     pil_img = Image.fromarray(frame)
-    enhancer_brightness = ImageEnhance.Brightness(pil_img)
-    pil_img = enhancer_brightness.enhance(brightness / 100)
-    enhancer_contrast = ImageEnhance.Contrast(pil_img)
-    pil_img = enhancer_contrast.enhance(contrast / 100)
-    frame = np.array(pil_img)
+    pil_img = ImageEnhance.Brightness(pil_img).enhance(brightness / 100)
+    pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast / 100)
 
     # Filters
     if filter_name == "grayscale":
-        frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
-        frame = np.stack([frame] * 3, axis=-1)
+        frame = np.dot(np.array(pil_img)[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+        pil_img = Image.fromarray(np.stack([frame]*3, axis=-1))
     elif filter_name == "sepia":
         kernel = np.array([[0.272, 0.534, 0.131],
                            [0.349, 0.686, 0.168],
                            [0.393, 0.769, 0.189]])
-        frame = frame.dot(kernel.T)
+        frame = np.array(pil_img)
+        frame = np.dot(frame, kernel.T)
         frame = np.clip(frame, 0, 255).astype(np.uint8)
+        pil_img = Image.fromarray(frame)
     elif filter_name == "invert":
-        frame = 255 - frame
+        pil_img = Image.fromarray(255 - np.array(pil_img))
     elif filter_name == "blur":
-        frame = np.array(Image.fromarray(frame).filter(ImageFilter.GaussianBlur(intensity)))
+        pil_img = pil_img.filter(ImageFilter.GaussianBlur(intensity))
     elif filter_name == "sharpen":
         for _ in range(intensity):
-            frame = np.array(Image.fromarray(frame).filter(ImageFilter.SHARPEN))
+            pil_img = pil_img.filter(ImageFilter.SHARPEN)
     elif filter_name == "edge":
-        frame = np.array(Image.fromarray(frame).filter(ImageFilter.FIND_EDGES))
+        pil_img = pil_img.filter(ImageFilter.FIND_EDGES)
     elif filter_name == "emboss":
-        frame = np.array(Image.fromarray(frame).filter(ImageFilter.EMBOSS))
+        pil_img = pil_img.filter(ImageFilter.EMBOSS)
     elif filter_name == "contour":
-        frame = np.array(Image.fromarray(frame).filter(ImageFilter.CONTOUR))
+        pil_img = pil_img.filter(ImageFilter.CONTOUR)
 
-    return Image.fromarray(frame)
+    # --- Transformations ---
+    if rotate_angle != 0:
+        pil_img = pil_img.rotate(rotate_angle, expand=True)
+    if flip_h:
+        pil_img = pil_img.transpose(Image.FLIP_LEFT_RIGHT)
+    if flip_v:
+        pil_img = pil_img.transpose(Image.FLIP_TOP_BOTTOM)
 
-# --- Image input options ---
+    # --- Crop ---
+    width, height = pil_img.size
+    left = int(width * crop_x / 100)
+    top = int(height * crop_y / 100)
+    right = left + int(width * crop_width / 100)
+    bottom = top + int(height * crop_height / 100)
+    pil_img = pil_img.crop((left, top, min(right, width), min(bottom, height)))
+
+    return pil_img
+
+# --- Image input ---
 st.subheader("📷 Capture or Upload an Image")
-
 tab1, tab2 = st.tabs(["📸 Use Camera", "📂 Upload Image"])
-
 image = None
 
 with tab1:
@@ -144,22 +113,29 @@ with tab2:
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
 
-# --- Process image if available ---
+# --- Process and display ---
 if image is not None:
-    col1, col2 = st.columns(2)
+    with st.spinner("Applying filters and transformations..."):
+        filtered_image = apply_filter(
+            image, filter_name, brightness, contrast, intensity,
+            rotate_angle, flip_horizontal, flip_vertical,
+            crop_x, crop_y, crop_width, crop_height
+        )
 
+    col1, col2 = st.columns(2)
     with col1:
         st.image(image, caption="Original Image", use_container_width=True)
-
     with col2:
-        filtered_image = apply_filter(image, filter_name, brightness, contrast, intensity)
-        st.image(filtered_image, caption=f"Filtered: {filter_name}", use_container_width=True)
+        st.image(filtered_image, caption=f"Filtered & Transformed: {filter_name}", use_container_width=True)
 
-    # --- Download filtered image ---
+    # --- Before/After Slider ---
+    st.subheader("🔄 Compare Before / After")
+    st.image([image, filtered_image], caption=["Original", "Filtered"], width=300)
+
+    # --- Download ---
     buf = io.BytesIO()
     filtered_image.save(buf, format="PNG")
     byte_im = buf.getvalue()
-
     st.download_button(
         label="Download Filtered Image",
         data=byte_im,
@@ -168,4 +144,3 @@ if image is not None:
     )
 else:
     st.info("📸 Take a photo or upload an image to apply filters.")
-
