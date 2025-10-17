@@ -4,7 +4,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 import io
 
 # --- Streamlit Page Config ---
-st.set_page_config(page_title="📸 Web Camera & Image Filters", layout="centered")
+st.set_page_config(page_title="Filterly", layout="centered")
 
 # --- Gold & White Theme CSS ---
 st.markdown("""
@@ -168,3 +168,4 @@ if image is not None:
     )
 else:
     st.info("📸 Take a photo or upload an image to apply filters.")
+
