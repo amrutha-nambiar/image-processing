@@ -6,6 +6,54 @@ import io
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="📸 Web Camera & Image Filters", layout="centered")
 
+# --- Custom Yellow Theme CSS ---
+st.markdown("""
+    <style>
+        /* Background color */
+        [data-testid="stAppViewContainer"] {
+            background-color: #FFF8DC; /* Light yellow (cornsilk) */
+        }
+        [data-testid="stSidebar"] {
+            background-color: #FFECB3; /* Soft pastel yellow for sidebar */
+        }
+        /* Titles and headers */
+        h1, h2, h3, h4 {
+            color: #C58900; /* Golden brown */
+        }
+        /* Sidebar text */
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
+            color: #7B5900;
+        }
+        /* Buttons and widgets */
+        div.stButton > button {
+            background-color: #FFD54F;
+            color: black;
+            border-radius: 10px;
+            border: 1px solid #C58900;
+        }
+        div.stButton > button:hover {
+            background-color: #FFB300;
+            color: white;
+        }
+        /* Tabs */
+        button[data-baseweb="tab"] {
+            background-color: #FFE082;
+            color: black;
+            border-radius: 10px;
+        }
+        button[data-baseweb="tab"]:hover {
+            background-color: #FFD54F;
+            color: black;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            background-color: #FFCA28;
+            color: black;
+            border-bottom: 3px solid #C58900;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- Title ---
 st.title("📸 Camera & Image Filters with Sliders")
 
 # --- Sidebar controls ---
@@ -21,7 +69,6 @@ intensity = st.sidebar.slider("Filter Intensity (for blur/sharpen)", 1, 10, 2)
 
 # --- Helper function for filters ---
 def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
-    # Convert to NumPy array
     frame = np.array(frame)
 
     # Brightness & contrast
@@ -32,7 +79,7 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     pil_img = enhancer_contrast.enhance(contrast / 100)
     frame = np.array(pil_img)
 
-    # Apply filters
+    # Filters
     if filter_name == "grayscale":
         frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
         frame = np.stack([frame] * 3, axis=-1)
