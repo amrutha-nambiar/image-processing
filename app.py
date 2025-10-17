@@ -76,7 +76,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Title ---
-st.title("📸 Filterly")
+st.title(" Filterly")
 
 # --- Sidebar controls ---
 st.sidebar.header(" Filters & Adjustments")
@@ -168,5 +168,6 @@ if image is not None:
     )
 else:
     st.info("Take a photo or upload an image to apply filters.")
+
 
 
