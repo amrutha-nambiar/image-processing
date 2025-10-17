@@ -6,80 +6,101 @@ import io
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Filterly", layout="centered")
 
-# --- Gold & White Theme CSS ---
+# --- Modern Gold & White Theme CSS ---
 st.markdown("""
     <style>
         /* App background */
         [data-testid="stAppViewContainer"] {
-            background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1);
-            color: black;
+            background: linear-gradient(to bottom right, #ffffff, #f9f6f2);
+            color: #1c1c1c;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
         }
 
         /* Sidebar styling */
         [data-testid="stSidebar"] {
-            background-color: #FFECB3 !important; /* soft yellow */
-            color: black !important;
+            background-color: #f5f3ef !important;
+            border-right: 1px solid #e0d9c8;
         }
 
         /* Sidebar text */
         [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
-            color: black !important;
+            color: #1c1c1c !important;
+            font-weight: 500;
         }
 
         /* Titles */
         h1, h2, h3, h4 {
-            color: #C89B00 !important; /* elegant gold */
+            color: #b8860b !important; /* muted gold */
             font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         /* Buttons */
         div.stButton > button {
-            background: linear-gradient(to right, #FFD54F, #FFC107);
-            color: black;
-            border-radius: 10px;
-            border: 1px solid #C89B00;
+            background: #f5de9e;
+            color: #1c1c1c;
+            border-radius: 8px;
+            border: none;
             font-weight: 600;
+            padding: 0.5rem 1rem;
+            box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
         }
 
         div.stButton > button:hover {
-            background: linear-gradient(to right, #FFC107, #FFB300);
-            color: black;
-            border: 1px solid #B58900;
+            background: #e8c97a;
+            color: #000;
+            box-shadow: 0px 3px 6px rgba(0,0,0,0.15);
         }
 
         /* Tabs */
         button[data-baseweb="tab"] {
-            background-color: #FFECB3;
-            color: black;
-            border-radius: 10px;
-            font-weight: 600;
+            background-color: #faf9f7;
+            color: #1c1c1c;
+            border-radius: 6px;
+            border: 1px solid #e0d9c8;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
         }
 
         button[data-baseweb="tab"]:hover {
-            background-color: #FFD54F;
-            color: black;
+            background-color: #f5de9e;
+            color: #000;
         }
 
         button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #FFC107;
-            color: black;
-            border-bottom: 3px solid #C89B00;
+            background-color: #e8c97a;
+            color: #000;
+            border-bottom: 2px solid #b8860b;
         }
 
         /* Info boxes */
         [data-testid="stInfo"] {
-            background-color: #FFF8E1;
-            color: black;
-            border-left: 5px solid #FFD54F;
+            background-color: #f9f6f2;
+            color: #1c1c1c;
+            border-left: 4px solid #b8860b;
+        }
+
+        /* Image styling */
+        [data-testid="stImageContainer"] img {
+            border-radius: 10px;
+            box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Sliders */
+        .stSlider > div > div > div > div {
+            background: #b8860b;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # --- Title ---
-st.title(" Filterly")
+st.title("✨ Filterly")
+
+st.caption("A clean and elegant image filter app")
 
 # --- Sidebar controls ---
-st.sidebar.header(" Filters & Adjustments")
+st.sidebar.header("🎛️ Filters & Adjustments")
 filter_name = st.sidebar.selectbox(
     "Choose a filter:",
     ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
@@ -128,9 +149,9 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     return Image.fromarray(frame)
 
 # --- Image input options ---
-st.subheader("Capture or Upload an Image")
+st.subheader("📷 Capture or Upload an Image")
 
-tab1, tab2 = st.tabs([" Use Camera", "Upload Image"])
+tab1, tab2 = st.tabs(["Use Camera", "Upload Image"])
 
 image = None
 
@@ -149,7 +170,7 @@ if image is not None:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(image, caption="Original Image", use_container_width=True)
+        st.image(image, caption="Original", use_container_width=True)
 
     with col2:
         filtered_image = apply_filter(image, filter_name, brightness, contrast, intensity)
@@ -161,13 +182,10 @@ if image is not None:
     byte_im = buf.getvalue()
 
     st.download_button(
-        label="Download Filtered Image",
+        label="💾 Download Filtered Image",
         data=byte_im,
         file_name="filtered_snapshot.png",
         mime="image/png"
     )
 else:
     st.info("Take a photo or upload an image to apply filters.")
-
-
-
