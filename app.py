@@ -4,7 +4,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 import io
 
 # --- Streamlit Page Config ---
-st.set_page_config(page_title="📸 Web Camera & Image Filters", layout="centered")
+st.set_page_config(page_title="Filterly", layout="centered")
 
 # --- Gold & White Theme CSS ---
 st.markdown("""
@@ -76,10 +76,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Title ---
-st.title("📸 Camera & Image Filters with Sliders")
+st.title("Filterly")
 
 # --- Sidebar controls ---
-st.sidebar.header("🎨 Filters & Adjustments")
+st.sidebar.header("Filters & Adjustments")
 filter_name = st.sidebar.selectbox(
     "Choose a filter:",
     ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
@@ -161,10 +161,11 @@ if image is not None:
     byte_im = buf.getvalue()
 
     st.download_button(
-        label="💾 Download Filtered Image",
+        label="Download Filtered Image",
         data=byte_im,
         file_name="filtered_snapshot.png",
         mime="image/png"
     )
 else:
     st.info("📸 Take a photo or upload an image to apply filters.")
+
