@@ -6,49 +6,71 @@ import io
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="📸 Web Camera & Image Filters", layout="centered")
 
-# --- Custom Yellow Theme CSS ---
+# --- Gold & White Theme CSS ---
 st.markdown("""
     <style>
-        /* Background color */
+        /* App background */
         [data-testid="stAppViewContainer"] {
-            background-color: #FFF8DC; /* Light yellow (cornsilk) */
+            background: linear-gradient(to bottom right, #FFFDF5, #FFF8E1);
+            color: black;
         }
+
+        /* Sidebar styling */
         [data-testid="stSidebar"] {
-            background-color: #FFECB3; /* Soft pastel yellow for sidebar */
+            background-color: #FFECB3 !important; /* soft yellow */
+            color: black !important;
         }
-        /* Titles and headers */
-        h1, h2, h3, h4 {
-            color: #C58900; /* Golden brown */
-        }
+
         /* Sidebar text */
         [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div {
-            color: #7B5900;
+            color: black !important;
         }
-        /* Buttons and widgets */
+
+        /* Titles */
+        h1, h2, h3, h4 {
+            color: #C89B00 !important; /* elegant gold */
+            font-weight: 700;
+        }
+
+        /* Buttons */
         div.stButton > button {
-            background-color: #FFD54F;
+            background: linear-gradient(to right, #FFD54F, #FFC107);
             color: black;
             border-radius: 10px;
-            border: 1px solid #C58900;
+            border: 1px solid #C89B00;
+            font-weight: 600;
         }
+
         div.stButton > button:hover {
-            background-color: #FFB300;
-            color: white;
+            background: linear-gradient(to right, #FFC107, #FFB300);
+            color: black;
+            border: 1px solid #B58900;
         }
+
         /* Tabs */
         button[data-baseweb="tab"] {
-            background-color: #FFE082;
+            background-color: #FFECB3;
             color: black;
             border-radius: 10px;
+            font-weight: 600;
         }
+
         button[data-baseweb="tab"]:hover {
             background-color: #FFD54F;
             color: black;
         }
+
         button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #FFCA28;
+            background-color: #FFC107;
             color: black;
-            border-bottom: 3px solid #C58900;
+            border-bottom: 3px solid #C89B00;
+        }
+
+        /* Info boxes */
+        [data-testid="stInfo"] {
+            background-color: #FFF8E1;
+            color: black;
+            border-left: 5px solid #FFD54F;
         }
     </style>
 """, unsafe_allow_html=True)
