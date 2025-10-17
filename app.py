@@ -76,10 +76,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Title ---
-st.title("📸 Camera & Image Filters with Sliders")
+st.title("📸 Filterly")
 
 # --- Sidebar controls ---
-st.sidebar.header("🎨 Filters & Adjustments")
+st.sidebar.header(" Filters & Adjustments")
 filter_name = st.sidebar.selectbox(
     "Choose a filter:",
     ["none", "grayscale", "sepia", "invert", "blur", "sharpen", "edge", "emboss", "contour"]
@@ -128,9 +128,9 @@ def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     return Image.fromarray(frame)
 
 # --- Image input options ---
-st.subheader("📷 Capture or Upload an Image")
+st.subheader("Capture or Upload an Image")
 
-tab1, tab2 = st.tabs(["📸 Use Camera", "📂 Upload Image"])
+tab1, tab2 = st.tabs([" Use Camera", "Upload Image"])
 
 image = None
 
@@ -161,11 +161,12 @@ if image is not None:
     byte_im = buf.getvalue()
 
     st.download_button(
-        label="💾 Download Filtered Image",
+        label="Download Filtered Image",
         data=byte_im,
         file_name="filtered_snapshot.png",
         mime="image/png"
     )
 else:
-    st.info("📸 Take a photo or upload an image to apply filters.")
+    st.info("Take a photo or upload an image to apply filters.")
+
 
