@@ -6,16 +6,16 @@ import io
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Filterly", layout="wide")
 
-# --- Snapchat-inspired Style ---
+# --- Frosted Light Theme (Modern Style) ---
 st.markdown("""
     <style>
-        /* Fullscreen clean background */
+        /* Soft frosted glass background */
         [data-testid="stAppViewContainer"] {
-            background-color: black;
-            color: white;
+            background: linear-gradient(to bottom right, #f9fafc, #eef2f3);
+            color: #222;
         }
 
-        /* Hide Streamlit's default header & footer */
+        /* Hide default header/footer */
         header, footer, [data-testid="stToolbar"] {visibility: hidden !important;}
 
         /* Center main content */
@@ -25,58 +25,64 @@ st.markdown("""
             text-align: center;
         }
 
-        /* App title */
+        /* Title */
         h1 {
-            color: #FFFC00 !important;
-            font-size: 2.8em !important;
-            margin-bottom: 10px;
+            color: #d4a017 !important;  /* elegant gold */
+            font-size: 2.6em !important;
+            margin-bottom: 5px;
             font-weight: 700;
         }
 
-        /* Floating control box (filters & sliders) */
+        /* Frosted control panel */
         .control-panel {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 252, 0, 0.15);
-            border: 2px solid rgba(255, 252, 0, 0.6);
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(212, 160, 23, 0.4);
             border-radius: 20px;
-            padding: 15px 25px;
+            padding: 20px 30px;
             backdrop-filter: blur(12px);
-            color: white;
+            color: #222;
             width: 80%;
             max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        /* Labels */
+        /* Labels and text */
         label, .stSelectbox label, .stSlider label {
-            color: white !important;
-            font-weight: 500;
+            color: #222 !important;
+            font-weight: 600;
         }
 
-        /* Buttons (Snapchat-style) */
+        /* Sliders */
+        .stSlider > div > div > div > div {
+            background: #d4a017 !important;
+        }
+
+        /* Buttons (rounded aesthetic) */
         div.stButton > button {
-            background-color: #FFFC00 !important;
-            color: black !important;
+            background: linear-gradient(to right, #ffe082, #ffd54f);
+            color: #222 !important;
             border: none;
             border-radius: 50%;
             width: 80px;
             height: 80px;
             font-size: 1.5em;
             font-weight: 700;
-            box-shadow: 0 0 15px rgba(255, 252, 0, 0.7);
+            box-shadow: 0 0 15px rgba(255, 213, 79, 0.6);
         }
 
         div.stButton > button:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(255, 252, 0, 1);
+            box-shadow: 0 0 25px rgba(255, 213, 79, 0.8);
         }
 
         /* Download button */
         .download-btn > button {
-            background-color: #FFFC00 !important;
-            color: black !important;
+            background-color: #ffd54f !important;
+            color: #222 !important;
             font-weight: 600;
             border-radius: 12px;
             padding: 0.5rem 1.2rem;
@@ -84,7 +90,15 @@ st.markdown("""
         }
 
         .download-btn > button:hover {
-            background-color: #FFF56A !important;
+            background-color: #ffecb3 !important;
+        }
+
+        /* Info box */
+        [data-testid="stInfo"] {
+            background-color: #fff9c4 !important;
+            color: #444 !important;
+            border-left: 5px solid #ffd54f;
+            border-radius: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -122,13 +136,10 @@ st.markdown('</div>', unsafe_allow_html=True)
 def apply_filter(frame, filter_name, brightness=100, contrast=100, intensity=2):
     frame = np.array(frame)
     pil_img = Image.fromarray(frame)
-
-    # Brightness & contrast
     pil_img = ImageEnhance.Brightness(pil_img).enhance(brightness / 100)
     pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast / 100)
     frame = np.array(pil_img)
 
-    # Apply filters
     if filter_name == "grayscale":
         frame = np.dot(frame[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
         frame = np.stack([frame] * 3, axis=-1)
